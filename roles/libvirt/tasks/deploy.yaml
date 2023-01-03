@@ -1,0 +1,139 @@
+# roles/libvirt/tasks/deploy.yaml
+---
+
+#- name: Enable network
+#  community.libvirt.virt_net:
+#    command: define
+#    name: ovs-bridge
+#    xml: '{{ lookup("template", "ovs-bridge.xml.j2") }}'
+#    state: active
+#    autostart: true
+#  run_once: true
+
+- name: Prepare variables
+  ansible.builtin.set_fact:
+    vm_image_source_url: "{{ vm_image_url }}"
+    vm_image_abs_path: "{{ libvirt_pool_dir }}/templates/{{ vm_image_filename }}"
+
+- name: Check if KVM can be used
+  ansible.builtin.command:
+    cmd: kvm-ok
+  # command: virt-host-validate qemu
+  changed_when: false
+  # TODO: if we want to support LXC then this needs a condition.
+
+- name: Create libvirt templates directory
+  ansible.builtin.file:
+    path: "{{ libvirt_pool_dir }}/templates"
+    recurse: true
+    state: directory
+
+- name: Check if VM image exists on hypervisor
+  ansible.builtin.stat:
+    path: "{{ vm_image_abs_path }}"
+  register: vm_image_abs_path_check
+
+- name: Download base image
+  ansible.builtin.get_url:
+    url: "{{ vm_image_source_url }}"
+    dest: "{{ vm_image_abs_path }}"
+  when: not vm_image_abs_path_check.stat.exists
+
+- name: Create libvirt templates directory
+  ansible.builtin.file:
+    path: "{{ vm_workdir }}/cloud-init/user-data.d"
+    recurse: true
+    state: directory
+  notify: update cloud-init
+
+- name: Template cloud-init meta-data
+  ansible.builtin.template:
+    src: cloud-init-meta-data.yml.j2
+    dest: "{{ vm_workdir }}/cloud-init/meta-data"
+  notify: update cloud-init
+
+- name: Template cloud-init user-data
+  ansible.builtin.template:
+    src: k8s-cloud-init.yml.j2
+    dest: "{{ vm_workdir }}/cloud-init/user-data.d/00-base.yml"
+  notify: update cloud-init
+
+- name: Write VM network config
+  ansible.builtin.copy:
+    content: "{{ { 'network': vm_config.network } | to_nice_yaml }}"
+    dest: "{{ vm_workdir }}/cloud-init/user-data.d/01-network-config.yml"
+  when: vm_config.network is defined
+  notify: update cloud-init
+
+- name: Write VM users config
+  ansible.builtin.copy:
+    content: "{{ { 'users': vm_config.users } | to_nice_yaml }}"
+    dest: "{{ vm_workdir }}/cloud-init/user-data.d/01-users-config.yml"
+  when: vm_config.users is defined
+  notify: update cloud-init
+
+- name: Write VM password config
+  ansible.builtin.copy:
+    content: "{{ { 'chpasswd': vm_config.chpasswd } | to_nice_yaml }}"
+    dest: "{{ vm_workdir }}/cloud-init/user-data.d/01-chpasswd-config.yml"
+  when: vm_config.chpasswd is defined
+  notify: update cloud-init
+
+- name: Write network-config
+  ansible.builtin.copy:
+    content: "{{ vm_config.network | default({}) | to_nice_yaml }}"
+    dest: "{{ vm_workdir }}/cloud-init/network-config"
+  notify: update cloud-init
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Merge yaml files in user-data.d
+  ansible.builtin.shell:
+    cmd: "podman run -v {{ vm_workdir }}/cloud-init/user-data.d:{{ vm_workdir }}/cloud-init/user-data.d governmentpaas/spruce spruce merge {{ vm_workdir }}/cloud-init/user-data.d/*.yml"
+  register: cloud_init_user_data
+  when: new_cloud_init
+
+- name: Write user-data
+  ansible.builtin.copy:
+    content: |
+      #cloud-config
+      {{ cloud_init_user_data.stdout }}
+    dest: "{{ vm_workdir }}/cloud-init/user-data"
+  when: new_cloud_init
+
+- name: Create cloud-init ISO
+  ansible.builtin.command:
+    cmd: "genisoimage -output cidata.iso -V cidata -r -J user-data meta-data network-config"
+    chdir: "{{ vm_workdir }}/cloud-init/"
+  when: new_cloud_init
+
+- name: Get list of virtual machines
+  community.libvirt.virt:
+    command: list_vms
+  register: existing_vms
+  changed_when: false
+
+- name: Create VM if not exists
+  block:
+    - name: Get stats of a file
+      ansible.builtin.stat:
+        path: "{{ vm_workdir }}/root.qcow2"
+      register: root_disk
+    - name: Convert root disk
+      command: "qemu-img create -f qcow2 -F qcow2 -b {{ vm_image_abs_path }} {{ vm_workdir }}/root.qcow2 {{ vm_root_size }}"
+      when: not root_disk.stat.exists
+    - name: Define vm
+      community.libvirt.virt:
+        command: define
+        xml: "{{ lookup('template', 'k8s-vm.xml.j2') }}"
+  when: "inventory_hostname not in existing_vms.list_vms"
+
+- name: Ensure VM is started
+  community.libvirt.virt:
+    name: "{{ inventory_hostname }}"
+    state: running
+  register: vm_start_results
+  until: "vm_start_results is success"
+  retries: 15
+  delay: 2

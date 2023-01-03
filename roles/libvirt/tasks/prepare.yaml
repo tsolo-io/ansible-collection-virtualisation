@@ -1,0 +1,8 @@
+# roles/libvirt/tasks/prepare.yaml
+---
+
+- name: Nesesary packages
+  ansible.builtin.apt:
+    name:
+      - cloud-utils
+      - python3-lxml

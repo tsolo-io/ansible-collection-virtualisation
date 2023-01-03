@@ -1,0 +1,49 @@
+# roles/proxmox/vm-template/tasks/template_install.yaml
+---
+
+- name: Debug
+  ansible.builtin.debug:
+    var: vm
+
+- name: Prepare variables
+  ansible.builtin.set_fact:
+    img_file: "{{proxmox_vm_template_storage }}/{{ vm.release }}-server-cloudimg-amd64.img"
+
+- name: Get Ubuntu cloudimg
+  ansible.builtin.get_url:
+    url: "{{ vm.url }}"
+    dest: "{{ img_file }}"
+  register: img_download
+
+- name: Add Qemu guest agent to image
+  ansible.builtin.command:
+    cmd: "virt-customize -a {{ img_file }} --install qemu-guest-agent"
+  when: img_download.changed
+
+- name: Create VM to use as template
+  ansible.builtin.command:
+    cmd: "qm create {{ vm.id }} --name {{ vm.name }} --memory 1024 --cores 1 --net0 virtio,bridge=vmbr0"
+
+- name: Import disk for new virtual machine
+  ansible.builtin.command:
+    cmd: "qm importdisk {{ vm.id }} {{ img_file }} {{ vm.storage }}"
+
+- name: Create VM to use as template
+  ansible.builtin.command:
+    cmd: "qm set {{ vm.id }} --scsihw virtio-scsi-pci --scsi0 {{ vm.storage }}:vm-{{ vm.id }}-disk-0,size=100"
+
+- name: Increase disk size of template
+  ansible.builtin.command:
+    cmd: "qm resize {{ vm.id }} scsi0 100G"
+
+- name: Create VM to use as template
+  ansible.builtin.command:
+    cmd: "qm set {{ vm.id }} --boot c --bootdisk scsi0"
+
+- name: Create VM to use as template
+  ansible.builtin.command:
+    cmd: "qm set {{ vm.id }} --ide2 {{ vm.storage }}:cloudinit"
+
+- name: Create template from VM
+  ansible.builtin.command:
+    cmd: "qm template {{ vm.id }}"

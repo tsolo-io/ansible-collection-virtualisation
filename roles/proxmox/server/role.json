@@ -1,0 +1,1 @@
+{"example": {}, "meta": {"author": {"value": "Tsolo.io"}, "company": {"value": "Tsolo.io"}, "dependencies": {"value": []}, "description": {"value": ""}, "license": {"value": "Apache-2.0"}, "min_ansible_version": {"value": "2.10"}, "name": {"value": "tsolo.virtualisation/proxmox/server"}}, "tag": {}, "todo": {}, "var": {}}

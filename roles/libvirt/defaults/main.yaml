@@ -1,0 +1,66 @@
+# roles/libvirt/defaults/main.yaml
+---
+
+# @var deploy_vm:description: >
+# If the VM needs to be deployed.
+# @end
+deploy_vm: false
+
+# @var destroy_vm:description: >
+# If VM should be removed/destroyed. This is done before VM is deployed.
+# @end
+destroy_vm: false
+
+# @var libvirt_pool_dir:description: >
+# Working directory to create VMs in.
+# @end
+libvirt_pool_dir: /var/lib/libvirt/images
+
+# @var ssh_key:description: >
+# SSH public key to add to the VM.
+# @end
+ssh_key: /root/.ssh/id_rsa.pub
+
+# @var vm_image_release_name:description: >
+# The Ubuntu name of the image we will use.
+# @end
+vm_image_release_name: focal
+
+# @var vm_image_filename:description: >
+# The name of the image file. This is used when downloading and saving the
+# image file. In general this value should not be set. Default is derived from
+# vm_image_release_name.
+# @end
+vm_image_filename: "{{ vm_image_release_name }}-server-cloudimg-amd64.img"
+
+# @var vm_image_url:description: >
+# The url where the image will be downloaded from. In general this value should
+# not be set. Default is derived from vm_image_filename.
+# @end
+vm_image_url: "https://cloud-images.ubuntu.com/{{ vm_image_release_name }}/current/{{ vm_image_filename }}"
+
+# @var vm_network_bridge_device:description: >
+# Applicable to hypervisor only.
+# Network device to bridge to the VM.
+# @end
+vm_network_bridge_device: ovs0
+
+# @var vm_ram_mb:description: >
+# Size of the VM memory in MB.
+# @end
+vm_ram_mb: 2048
+
+# @var vm_root_pass:description: >
+# root password of the VM.
+# @end
+vm_root_pass: test123
+
+# @var vm_root_size:description: >
+# The size of the VM root filesystem.
+# @end
+vm_root_size: 3G
+
+# @var vm_vcpus:description: >
+# Number of virtual CPUs to allocate to the VM.
+# @end
+vm_vcpus: 2

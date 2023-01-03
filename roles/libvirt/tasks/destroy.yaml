@@ -1,0 +1,28 @@
+# roles/libvirt/tasks/destroy.yaml
+---
+
+- name: List all VMs
+  community.libvirt.virt:
+    command: list_vms
+  register: all_vms
+
+- set_fact:
+    vm_should_be_detroyed: "{{ inventory_hostname in all_vms.list_vms }}"
+
+- name: Destroy VM
+  community.libvirt.virt:
+    name: "{{ inventory_hostname }}"
+    command: destroy
+    state: destroyed
+  when: vm_should_be_detroyed
+
+- name: Set VM to undefined
+  community.libvirt.virt:
+    name: "{{ inventory_hostname }}"
+    command: undefine
+  when: vm_should_be_detroyed
+
+- name: Delete content & directory
+  ansible.builtin.file:
+    state: absent
+    path: "{{ vm_workdir }}"

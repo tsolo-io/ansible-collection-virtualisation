@@ -1,0 +1,20 @@
+# roles/proxmox/vm/tasks/destroy.yaml
+---
+
+
+- name: Stop virtual machine
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_admin_user }}"
+    api_password: "{{ proxmox_admin_password }}"
+    api_host: "{{ proxmox_server_address }}"
+    vmid: "{{ vm_id }}"
+    force: true
+    state: stopped
+
+- name: Remove virtual machine
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_admin_user }}"
+    api_password: "{{ proxmox_admin_password }}"
+    api_host: "{{ proxmox_server_address }}"
+    vmid: "{{ vm_id }}"
+    state: absent

@@ -1,2 +1,4 @@
-# ansible-collection-virtualisation
-Utility collection for installing and managing virtual environments with Ansible.
+# Ansible Virtualisation - tsolo.virtualisation
+
+A collection containing miscellaneous Ansible roles, plays, etc. used for set up
+and management of non-production virtual environments.

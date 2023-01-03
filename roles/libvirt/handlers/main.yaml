@@ -1,0 +1,7 @@
+# roles/libvirt/handlers/main.yaml
+---
+# Handlers
+
+- name: Update cloud-init
+  ansible.builtin.set_fact:
+    new_cloud_init: true

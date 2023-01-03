@@ -1,0 +1,85 @@
+# roles/proxmox/vm/tasks/deploy.yaml
+---
+
+- name: Clone VM from template
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_admin_user }}"
+    api_password: "{{ proxmox_admin_password }}"
+    api_host: "{{ proxmox_server_address }}"
+    clone: "{{ vm_template }}"
+    name: "{{ inventory_hostname }}"
+    node: "{{ proxmox_server }}"
+    newid: "{{ vm_id }}"
+    storage: "{{ vm_storage }}"
+    scsi:
+      scsi0: '{{ vm_storage }}:{{ vm_root_size_gb }},format=qcow2'
+    ide:
+      ide2: '{{ vm_storage }}:cloudinit,format=qcow2'
+    ciuser: "{{ ansible_user }}"
+    cipassword: "{{ ansible_ssh_pass }}"
+    ipconfig:
+      ipconfig0: "ip={{ vm_net_ip }}/{{ vm_net_mask }},gw={{ vm_net_gateway }}"
+    memory: "{{ vm_ram_mb }}"
+    cores: "{{ vm_vcpu }}"
+    vcpus: "{{ vm_vcpu }}"
+    format: qcow2
+    onboot: true
+    kvm: true
+    full: true
+    ostype: l26
+    sockets: 1
+    timeout: 500
+    searchdomains: "sansa.org.za"
+    proxmox_default_behavior: no_defaults
+  register: vm_create
+
+- name: Update virtual machine
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_admin_user }}"
+    api_password: "{{ proxmox_admin_password }}"
+    api_host: "{{ proxmox_server_address }}"
+    node: "{{ proxmox_server }}"
+    vmid: "{{ vm_id }}"
+    ciuser: "{{ vm_user }}"
+    cipassword: "{{ vm_password }}"
+    ipconfig:
+      ipconfig0: "ip={{ vm_net_ip }}/{{ vm_net_mask }},gw={{ vm_net_gateway }}"
+    memory: "{{ vm_ram_mb }}"
+    cores: "{{ vm_vcpu }}"
+    nameservers: 10.150.10.23
+    vcpus: "{{ vm_vcpu }}"
+    onboot: true
+    kvm: true
+    full: true
+    ostype: l26
+    sockets: 1
+    timeout: 500
+    searchdomains: "sansa.org.za"
+    proxmox_default_behavior: no_defaults
+    sshkeys: |
+      ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDY4IRkau2Zikm6gj1r2ewntXx1LdI8jm3Lz5J3a3x8+9ZEkBxnCyTykZ3cH5Jy0EC9Y19CM3qVr10ZJAFdRa8Ijhnk13K8rprCycqPtuZJU4yPF1KbPZkYTsaf4zPKk2D+TJMnlFKsx25Wc6Buo0gl9Dyv2mFvhLORZ1N3APfj6Mqo/At3NH5nzT51eOIBhZ/0WD3c+yNLYvSFDy3s1howAquXdFSoaLRcBSPNQW9resXV7joRB7+3Y2Br5geTGwmDf4OOEwllqGO3tcj2WDI41giADfC6ZeoZNzNo9fhSkYwtfPHmxaQMEfuNGGp+QsTfoOn3DquLHWl3iAZ6VaDODMA8IxBV7b+VQt1xpr4HvHiMchnenKyQXPCn3HDj3Onc0wOMA8YDC2/ILmPUc0I2a6d5EV5sCl2vrPU6jMIAycDYOjjLCd9BNKOWiJehmDhekSXj9djgnpWsr5XOAboYAPfHNEZt+CYiBTIgmBmlM8N8h5UmPfWC7X72G0Ua2Rk= martin@wired
+    scsi:
+      scsi0: '{{ vm_storage }}:{{ vm_root_size_gb }}'
+    # TODO: set in cloudinit config: ssh_pwauth:   true
+    update: true
+
+- name: Start virtual machine
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_admin_user }}"
+    api_password: "{{ proxmox_admin_password }}"
+    api_host: "{{ proxmox_server_address }}"
+    vmid: "{{ vm_id }}"
+    state: started
+
+- name: Wait for virtual machine to run
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_admin_user }}"
+    api_password: "{{ proxmox_admin_password }}"
+    api_host: "{{ proxmox_server_address }}"
+    vmid: "{{ vm_id }}"
+    state: current
+  register: vm_state
+  until: "vm_state.status == 'running'"
+  retries: 10
+  delay: 6
+  when: vm_create.changed

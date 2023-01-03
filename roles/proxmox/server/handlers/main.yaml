@@ -1,0 +1,6 @@
+# roles/proxmox/server/handlers/main.yaml
+---
+
+- name: Apt update
+  ansible.builtin.apt:
+    update_cache: yes

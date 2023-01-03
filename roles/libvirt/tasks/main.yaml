@@ -1,0 +1,20 @@
+# roles/libvirt/tasks/main.yaml
+---
+
+- name: Set the VM working path
+  ansible.builtin.set_fact:
+    vm_workdir: "{{ libvirt_pool_dir }}/{{ inventory_hostname }}"
+
+- name: Prepare VM host
+  import_tasks: prepare.yaml
+  delegate_to: "{{ vm_host }}"
+
+- name: Destroy VM
+  import_tasks: destroy.yaml
+  delegate_to: "{{ vm_host }}"
+  when: destroy_vm
+
+- name: Deploy VM
+  import_tasks: deploy.yaml
+  delegate_to: "{{ vm_host }}"
+  when: deploy_vm

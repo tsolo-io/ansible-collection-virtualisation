@@ -1,0 +1,11 @@
+# roles/proxmox/vm-template/tasks/main.yaml
+---
+
+- name: Install required packages
+  ansible.builtin.apt:
+    pkg:
+      - libguestfs-tools
+
+- name: Check and setup each template
+  include_tasks: template_check.yaml
+  loop: "{{ proxmox_vm_templates }}"

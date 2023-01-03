@@ -1,0 +1,48 @@
+# roles/proxmox/server/tasks/main.yaml
+---
+
+- name: Remove pve-enterprise apt source
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+  notify: apt update
+
+- name: Add pve-no-subscription apt source
+  ansible.builtin.copy:
+    content: |
+      deb http://download.proxmox.com/debian/pve bullseye pve-no-subscription
+    dest: /etc/apt/sources.list.d/pve-no-subscription.list
+  notify: Apt update
+
+- name: Insert/Update HTML surrounded by custom markers after <body> line
+  ansible.builtin.blockinfile:
+    path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+    marker: "// {mark} ANSIBLE MANAGED BLOCK "
+    insertafter: "let res = response.result;"
+    block: |-
+      res.data.status = 'active';
+
+- name: Install packages
+  ansible.builtin.apt:
+    pkg:
+      - prometheus-node-exporter
+
+- name: Remove pve-enterprise apt source
+  ansible.builtin.file:
+    path: /var/lib/vz/snippets
+    state: directory
+
+- name: Create VM deployment snippet
+  ansible.builtin.copy:
+    content: |
+      cloud-config
+      users:
+        - name: ubuntu
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+      ssh_pwauth: true
+      chpasswd:
+        list: |
+          ubuntu:ubuntu ## Overriding default username, password
+        expire: false
+    dest: /var/lib/vz/snippets/ssh.yaml

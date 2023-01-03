@@ -1,0 +1,13 @@
+# roles/proxmox/vm-template/defaults/main.yaml
+---
+
+# proxmox_vm_template_ubuntu_release: jammy
+proxmox_vm_template_ubuntu_url_default: "https://cloud-images.ubuntu.com/{{ proxmox_vm_template_ubuntu_release }}/current/{{ proxmox_vm_template_ubuntu_release }}-server-cloudimg-amd64.img"
+proxmox_vm_template_name_default: "ubuntu-{{ proxmox_vm_template_ubuntu_release }}-cloudinit-template"
+proxmox_vm_template_storage: /var/lib/vz/template
+
+proxmox_vm_templates:
+  - id: 99990
+    ubuntu_release: jammy
+  - id: 99991
+    ubuntu_release: focal

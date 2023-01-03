@@ -1,0 +1,3 @@
+# roles/libvirt/vars/main.yaml
+---
+new_cloud_init: false

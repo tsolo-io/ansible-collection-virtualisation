@@ -1,0 +1,5 @@
+# roles/proxmox/vm-template/.ansibledoctor
+---
+role_name: tsolo.virtualisation/proxmox/vm-template
+template: json
+template_dir: ~/src/ansible-utilities/ansible-doctor/templates

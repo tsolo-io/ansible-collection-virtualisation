@@ -1,0 +1,5 @@
+# roles/libvirt/.ansibledoctor
+---
+role_name: tsolo.virtualisation/libvirt
+template: json
+template_dir: ~/src/ansible-utilities/ansible-doctor/templates

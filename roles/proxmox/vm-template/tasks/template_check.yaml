@@ -1,0 +1,29 @@
+# roles/proxmox/vm-template/tasks/template_check.yaml
+---
+
+- name: Prepare internal variables
+  ansible.builtin.set_fact:
+    _vm_template_id: "{{ item.id }}"
+    proxmox_vm_template_ubuntu_release: "{{ item.ubuntu_release }}"
+
+- name: Check if clone exists
+  ansible.builtin.command:
+    cmd: "qm status {{ _vm_template_id }}"
+  register: _vm_status
+  failed_when: false
+  changed_when: false
+
+- name: Show vm_status
+  ansible.builtin.debug:
+    var: _vm_status
+
+- name: Check and setup each template
+  include_tasks: template_install.yaml
+  when: "_vm_status.stdout != 'status: stopped'"
+  vars:
+    vm:
+      id: "{{ item.id }}"
+      release: "{{ item.ubuntu_release }}"
+      url: "{{ proxmox_vm_template_ubuntu_url_default }}"
+      name: "{{ proxmox_vm_template_name_default }}"
+      storage: "local-lvm"

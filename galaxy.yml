@@ -1,0 +1,23 @@
+# galaxy.yml
+---
+
+namespace: tsolo
+name: virtualisation
+version: 1.0.0
+readme: README.md
+authors:
+  - "Tsolo (http://tsolo.io)"
+  - "Martin Slabber <martin@tsolo.io>"
+description: Utility collection for installing and managing virtual environments.
+license:
+  - Apache-2.0
+tags:
+  - virsh
+  - kvm
+  - libvirt
+  - proxmox
+repository: https://bitbucket.org/tsolo-dev/ansible-collection-virtualisation.git
+documentation: https://bitbucket.org/tsolo-dev/ansible-collection-virtualisation
+homepage: https://bitbucket.org/tsolo-dev/ansible-collection-virtualisation
+build_ignore:
+- '*.tar.gz'

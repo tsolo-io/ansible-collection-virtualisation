@@ -1,0 +1,14 @@
+# roles/proxmox/vm/tasks/main.yaml
+---
+
+- name: Prepare variables
+  ansible.builtin.set_fact:
+    proxmox_server_address: "{{ hostvars[proxmox_server]['ansible_host'] }}"
+
+- name: Destroy VM
+  local_action: import_tasks destroy.yaml
+  when: destroy_vm
+
+- name: Deploy VM
+  local_action: import_tasks deploy.yaml
+  when: deploy_vm

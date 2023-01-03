@@ -1,0 +1,23 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+packages:
+  - vim
+  - tmux
+  - jq
+  - htop
+  - curl
+  - nfs-common
+
+users:
+  - default
+
+chpasswd:
+  expire: false
+
+network:
+  version: 2
+  ethernets:
+    ens7:
+      dhcp4: true

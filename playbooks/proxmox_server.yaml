@@ -1,0 +1,9 @@
+# playbooks/proxmox_server.yaml
+---
+
+- hosts: proxmox_servers
+  gather_facts: true
+  become: false
+  roles:
+    - role: proxmox/server
+    - role: proxmox/vm-template

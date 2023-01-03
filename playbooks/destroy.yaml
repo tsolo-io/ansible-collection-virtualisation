@@ -1,0 +1,11 @@
+# playbooks/destroy.yaml
+---
+
+- hosts: virtual_machines
+  gather_facts: false
+  become: true
+  vars:
+    deploy_vm: false
+    destroy_vm: true
+  roles:
+    - role: libvirt
